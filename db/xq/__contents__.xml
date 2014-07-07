@@ -5,4 +5,5 @@
     <resource type="BinaryResource" name="cts-x.xquery" owner="admin" group="dba" mode="755" created="2013-02-15T07:37:25-05:00" modified="2013-02-15T07:37:25-05:00" filename="cts-x.xquery" mimetype="application/xquery"/>
     <resource type="BinaryResource" name="cts.xquery" owner="admin" group="dba" mode="755" created="2013-02-15T07:37:22-05:00" modified="2013-02-15T07:37:25-05:00" filename="cts.xquery" mimetype="application/xquery"/>
     <resource type="BinaryResource" name="textanalysis-utils.xquery" owner="admin" group="dba" mode="755" created="2013-02-15T07:37:22-05:00" modified="2013-02-15T07:37:25-05:00" filename="textanalysis-utils.xquery" mimetype="application/xquery"/>
+    <resource type="BinaryResource" name="treebank-util.xquery" owner="admin" group="dba" mode="755" created="2013-02-15T07:37:22-05:00" modified="2013-02-15T07:37:25-05:00" filename="treebank-util.xquery" mimetype="application/xquery"/>
 </collection>
