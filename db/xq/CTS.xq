@@ -38,6 +38,8 @@ let $under_copyright := $e_urn and cts:isUnderCopyright($inv,$e_urn)
 let $reply :=
   if ($e_query = 'GetValidReff')
     then cts:getValidReff($inv,$e_urn,$e_level)
+    else if ($e_query = 'GetFirstPassagePlus')
+    then cts:getFirstPassagePlus($inv,$e_urn)
     else if ($e_query = 'ExpandValidReffs')
     then cts:expandValidReffs($inv,$e_urn,$e_level)
     else if ($e_query = 'GetCapabilities')

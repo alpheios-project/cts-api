@@ -309,6 +309,44 @@ declare function cts:getCapabilities($a_inv)
 };
 
 (:
+    CTS GetFirstPassagePlus request
+    Parameters : 
+        $a_inv The inventory
+        $a_urn An Edition or Translation URN
+    Return Value
+        <Body> of the response is the passage, 
+        <prevnext> contains <current> urn and <next> urn
+:)
+declare function cts:getFirstPassagePlus($a_inv,$a_urn)
+{    
+    let $cts := cts:parseUrn($a_inv,$a_urn)
+    let $doc := doc($cts/fileInfo/fullPath)
+    let $entry := cts:getCatalog($a_inv,$a_urn)
+    let $smallest := ($entry//ti:citation)[last()]
+    let $path := replace($smallest/@xpath,"='\?'",'')
+    let $scope := replace($smallest/@scope,"='\?'",'')
+    
+    let $passage := util:eval(fn:concat("($doc", $scope, $path, ")[1]"))
+    let $urn := for $parent in $passage/ancestor-or-self::node()[@n]
+        return $parent/@n
+    let $urn :=  fn:concat($a_urn, ":", fn:string-join($urn, '.'))
+
+    let $passage2 := util:eval(fn:concat("($doc", $scope, $path, ")[2]"))
+    let $next := for $parent in $passage2/ancestor-or-self::node()[@n]
+        return $parent/@n
+    let $next :=  fn:concat($a_urn, ":", fn:string-join($next, '.'))
+    
+    return <metareply>
+        <body>{$passage}</body>
+        <prevnext>
+            <prev/>
+            <current>{$urn}</current>
+            <next>{$next}</next>
+        </prevnext>
+    </metareply>
+    
+};
+(:
     CTS getValidReff request (unspecified level)
     Parameters:
         $a_inv the inventory name
