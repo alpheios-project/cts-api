@@ -346,6 +346,81 @@ declare function cts:getFirstPassagePlus($a_inv,$a_urn)
     </metareply>
     
 };
+
+
+(: 
+ : Get the xpath of the smallest node for a given text record.
+:)
+declare function cts:smallestCitationNode($a_text_record) {
+    let $citation := ($a_text_record//ti:citation)[last()]
+    
+    let $first := replace(fn:string($citation/@scope), "\]", " and @type]")
+    let $last := replace(fn:string($citation/@xpath), "\]", fn:concat(" and @type='", $citation/@label,"']"))
+    
+    let $scope := fn:concat($first, $last)
+    let $xpath := replace($scope,"='\?'",'')
+    return $xpath
+};
+(: 
+ : $a_urn Urn or namespace
+ : $a_query Query
+ :)
+declare function cts:search($a_urn,$a_query)
+{
+    let $collection := fn:concat("/db/repository/", $a_urn)
+    let $config := <config xmlns="" width="60"/>
+    let $results := for $hit in collection($collection)//tei:body[ft:query(., $a_query)]
+        let $path := fn:concat(util:collection-name($hit), "/", util:document-name($hit))
+        let $docname := collection("/db/repository/inventory")//ti:online[@docname=$path] 
+        let $doc := doc($docname)
+        let $editionNode := $docname/..
+        
+        let $urn := if ($editionNode/@urn)
+            then fn:string($editionNode/@urn)
+        else
+            let $edition := tokenize($docname/../@projid, ":")[2]
+            let $work := tokenize($docname/../../@projid, ":")[2]
+            let $textgroup := tokenize($docname/../../../@projid, ":")[2]
+            
+            return concat("urn:cts:",$textgroup,".",$work,".",$edition)
+            
+        let $expanded := kwic:expand($hit)
+        
+        let $xpath := cts:smallestCitationNode($docname/..)
+        let $tokenizedPath := tokenize($xpath, "/")
+        
+        let $indexOfBody := if(index-of($tokenizedPath, "tei:body"))
+            then index-of($tokenizedPath, "tei:body")
+            else index-of($tokenizedPath, "body")
+        
+        let $reduced_xpath := fn:string-join(subsequence($tokenizedPath, $indexOfBody + 1, count($tokenizedPath) - $indexOfBody), "/")
+        let $eval := fn:concat("$expanded/", substring($reduced_xpath, 1, string-length($reduced_xpath) - 1), " and .//exist:match]")
+        let $contexts := util:eval($eval)
+        
+        return for $context in $contexts
+            let $passage := for $citation in $docname//ti:citation
+                let $label := fn:string($citation/@label)
+                return fn:string($context/ancestor-or-self::node()[@n and @type=$label][1]/@n)
+                
+            let $passage_urn := fn:concat($urn, ":", fn:string-join($passage, "."))
+            
+           (:
+                    <context>{$context}</context>
+            :)
+            return for $context_match in $context//exist:match
+                return <result>
+                        <urn>{$urn}</urn>
+                        <passage>{$passage_urn}</passage>
+                        <text>{kwic:get-summary($context, $context_match, $config)}</text>
+                    </result>
+    return <reply>
+            <query>{$a_query}</query>
+            <collection>{$a_urn}</collection>
+            <results>{$results}</results>
+        </reply>
+};
+
+
 (:
     CTS getValidReff request (unspecified level)
     Parameters:
