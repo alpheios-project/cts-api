@@ -355,7 +355,7 @@ declare function cts:smallestCitationNode($a_text_record) {
     let $citation := ($a_text_record//ti:citation)[last()]
     
     let $first := replace(fn:string($citation/@scope), "\]", " and @type]")
-    let $last := replace(fn:string($citation/@xpath), "\]", fn:concat(" and @type='", $citation/@label,"']"))
+    let $last := fn:string($citation/@xpath)
     
     let $scope := fn:concat($first, $last)
     let $xpath := replace($scope,"='\?'",'')
@@ -372,7 +372,6 @@ declare function cts:search($a_urn,$a_query)
     let $results := for $hit in collection($collection)//tei:body[ft:query(., $a_query)]
         let $path := fn:concat(util:collection-name($hit), "/", util:document-name($hit))
         let $docname := collection("/db/repository/inventory")//ti:online[@docname=$path] 
-        let $doc := doc($docname)
         let $editionNode := $docname/..
         
         let $urn := if ($editionNode/@urn)
@@ -386,32 +385,31 @@ declare function cts:search($a_urn,$a_query)
             
         let $expanded := kwic:expand($hit)
         
-        let $xpath := cts:smallestCitationNode($docname/..)
+        let $xpath := replace(cts:smallestCitationNode($docname/..), "//", "/   /")
         let $tokenizedPath := tokenize($xpath, "/")
         
         let $indexOfBody := if(index-of($tokenizedPath, "tei:body"))
             then index-of($tokenizedPath, "tei:body")
             else index-of($tokenizedPath, "body")
         
-        let $reduced_xpath := fn:string-join(subsequence($tokenizedPath, $indexOfBody + 1, count($tokenizedPath) - $indexOfBody), "/")
-
+        let $subsequence := subsequence($tokenizedPath, $indexOfBody + 1, count($tokenizedPath) - $indexOfBody)
+        let $joinedXpath := fn:string-join($subsequence, "/")
+        let $reduced_xpath := replace($joinedXpath, "   ", "")
         let $lastChar := substring($reduced_xpath, string-length($reduced_xpath), 1)
         let $eval := if($lastChar = "]")
         then fn:concat("$expanded/", substring($reduced_xpath, 1, string-length($reduced_xpath) - 1), " and .//exist:match]")
-        else fn:concat("$expanded/", substring($reduced_xpath, 1, string-length($reduced_xpath) - 1), "node()[.//exist:match]") 
-        
+        else fn:concat("$expanded/", $reduced_xpath, "node()[.//exist:match]") 
         let $contexts := util:eval($eval)
         
         return for $context in $contexts
             let $passage := for $citation in $docname//ti:citation
-                let $label := fn:string($citation/@label)
-                return fn:string($context/ancestor-or-self::node()[@n and @type=$label][1]/@n)
+                let $label := fn:lower-case(fn:string($citation/@label))
+                return if (fn:string($citation/@xpath) = "//tei:l[@n='?']" or fn:string($citation/@xpath) = "/tei:l[@n='?']") (: Dirty hack :)
+                then fn:string($context/ancestor-or-self::node()[@n][1]/@n)
+                else fn:string($context/ancestor-or-self::node()[@n and fn:lower-case(@type)=$label][1]/@n)
                 
             let $passage_urn := fn:concat($urn, ":", fn:string-join($passage, "."))
             
-           (:
-                    <context>{$context}</context>
-            :)
             return for $context_match in $context//exist:match
                 return <result>
                         <urn>{$urn}</urn>
