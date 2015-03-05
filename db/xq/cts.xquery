@@ -394,7 +394,12 @@ declare function cts:search($a_urn,$a_query)
             else index-of($tokenizedPath, "body")
         
         let $reduced_xpath := fn:string-join(subsequence($tokenizedPath, $indexOfBody + 1, count($tokenizedPath) - $indexOfBody), "/")
-        let $eval := fn:concat("$expanded/", substring($reduced_xpath, 1, string-length($reduced_xpath) - 1), " and .//exist:match]")
+
+        let $lastChar := substring($reduced_xpath, string-length($reduced_xpath), 1)
+        let $eval := if($lastChar = "]")
+        then fn:concat("$expanded/", substring($reduced_xpath, 1, string-length($reduced_xpath) - 1), " and .//exist:match]")
+        else fn:concat("$expanded/", substring($reduced_xpath, 1, string-length($reduced_xpath) - 1), "node()[.//exist:match]") 
+        
         let $contexts := util:eval($eval)
         
         return for $context in $contexts
