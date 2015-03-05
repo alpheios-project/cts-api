@@ -31,6 +31,8 @@
 module namespace cts = "http://alpheios.net/namespaces/cts";
 import module namespace cts-utils="http://alpheios.net/namespaces/cts-utils" 
             at "cts-utils.xquery";
+
+import module namespace kwic="http://exist-db.org/xquery/kwic";
 declare namespace ti = "http://chs.harvard.edu/xmlns/cts3/ti";
 declare namespace  util="http://exist-db.org/xquery/util";
 declare namespace tei="http://www.tei-c.org/ns/1.0";
